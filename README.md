@@ -1,4 +1,4 @@
-# 🧪 Contract Drift Detector
+# Contract Drift Detector
 
 Deterministic OpenAPI compatibility checker for detecting breaking API contract changes.
 
@@ -9,11 +9,11 @@ When an API evolves, small contract changes can break existing consumers:
 - Removing an endpoint
 - Removing a parameter
 - Converting an optional parameter to required
+- Removing a request body property
 - Changing a field type
-- Adding a new required request property
 - Removing a response code
 
-These changes often slip through manual code reviews. Contract Drift Detector automates this check.
+These changes often slip through manual code reviews. Contract Drift Detector automates this check with **zero false positives** — every detection is a real breaking change.
 
 ## Example
 
@@ -38,36 +38,35 @@ GET /users/{id}
 Endpoint removed
 
 [BREAKING]
-POST /users [200]
-Type changed: email from string to integer
+POST /orders
+New required field: country
 
 [BREAKING]
-POST /users
-New required field: country
+GET /products/{id}
+Type changed: price from string to number
 ```
 
-## What It Detects
+## What It Detects (v1.0)
 
-| Change Type | Severity |
-|---|---|
-| Endpoint removed | BREAKING |
-| HTTP method removed | BREAKING |
-| Parameter removed | BREAKING |
-| Parameter became required | BREAKING |
-| Required property added | BREAKING |
-| Property type changed | BREAKING |
-| Response code removed | BREAKING |
-| Response property removed | BREAKING |
-| Response property type changed | BREAKING |
+| Change Type | Severity | Example |
+|---|---|---|
+| Endpoint removed | BREAKING | `DELETE /users/{id}` deleted |
+| Parameter removed | BREAKING | `?filter=active` removed |
+| Parameter became required | BREAKING | `?token` optional → required |
+| Request property removed | BREAKING | `name` field removed from body |
+| Request property became required | BREAKING | `email` optional → required |
+| Request property type changed | BREAKING | `age: string` → `age: integer` |
+| Response code removed | BREAKING | `404` response deleted |
+| Response property removed | BREAKING | `name` field removed from response |
+| Response property type changed | BREAKING | `id: string` → `id: integer` |
 
 ## What It Does NOT Detect (Yet)
 
 - Authentication changes
 - Rate limiting changes
 - Header changes
-- All OpenAPI edge cases
-- Webhook changes
 - Schema composition (allOf, oneOf, anyOf)
+- Webhook changes
 
 These are planned for future versions.
 
@@ -82,15 +81,16 @@ OpenAPI v2 ─┘
                 ↓
            Diff Engine
                 ↓
-          Compatibility Rules
+         Compatibility Rules
                 ↓
-             Report
+              Report
 ```
 
 ### Key Design Decisions
 
 - **Deterministic rules only** — AI can explain impact later, but never decides if something is breaking
 - **Domain-driven** — `Contract`, `Endpoint`, `Change` are plain Java records
+- **Strategy pattern** — each rule is a separate class implementing `CompatibilityRule`
 - **Parser-agnostic** — the diff engine works on domain objects, not Swagger POJOs
 - **No Spring dependency** — the engine runs without Spring Boot; the CLI is standalone
 
@@ -102,16 +102,28 @@ src/main/java/com/contractdrift/
 ├── application/
 │   └── CompareContractsUseCase.java        # Orchestration
 ├── domain/
-│   ├── Change.java                         # Change record
-│   ├── ChangeType.java                     # Change categories
 │   ├── Contract.java                       # API contract
-│   ├── ContractDiffer.java                 # Diff engine
 │   ├── Endpoint.java                       # API operation
 │   ├── EndpointKey.java                    # Endpoint identity
-│   └── Severity.java                       # BREAKING / NON_BREAKING
+│   ├── Change.java                         # Change record
+│   ├── ChangeType.java                     # Change categories
+│   ├── Severity.java                       # BREAKING / NON_BREAKING
+│   ├── CompatibilityRule.java              # Strategy interface
+│   ├── DiffEngine.java                     # Rule orchestrator
+│   └── rules/                              # 9 compatibility rules
+│       ├── RemovedEndpointRule.java
+│       ├── RemovedParameterRule.java
+│       ├── ParameterBecameRequiredRule.java
+│       ├── RemovedRequestPropertyRule.java
+│       ├── RequestPropertyBecameRequiredRule.java
+│       ├── RequestPropertyTypeChangedRule.java
+│       ├── RemovedResponseRule.java
+│       ├── ResponsePropertyRemovedRule.java
+│       └── ResponseTypeChangedRule.java
 └── infrastructure/
     ├── openapi/
-    │   └── OpenApiParserAdapter.java       # YAML → Contract
+    │   ├── OpenApiParserAdapter.java       # YAML → Contract
+    │   └── OpenApiMapper.java              # Swagger → Domain
     └── report/
         └── ConsoleReportRenderer.java      # Changes → text
 ```
@@ -121,8 +133,7 @@ src/main/java/com/contractdrift/
 - Java 21
 - Maven
 - Swagger Parser 2.1.46
-- JUnit 5
-- AssertJ
+- JUnit 5 + AssertJ
 - GitHub Actions
 
 ## Run Tests
@@ -154,9 +165,8 @@ GitHub Actions runs `mvn verify` on every push and PR to `main`.
 ## Roadmap
 
 ### v1.1
-- JSON output
-- Markdown output
-- Compatibility score
+- JSON output for CI/CD integration
+- AddedRequiredParameter rule (new endpoint with required params)
 
 ### v1.2
 - GitHub Action
@@ -164,14 +174,9 @@ GitHub Actions runs `mvn verify` on every push and PR to `main`.
 ### v1.3
 - Automatic PR comments
 
-### v1.4
-- Optional AI explanations (Spring AI)
-
 ### v2.0
 - Configurable rules
-- Ignore rules
 - Policy file
-- Multiple compatibility profiles
 
 ## License
 
