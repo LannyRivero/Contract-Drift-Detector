@@ -3,6 +3,7 @@ package com.contractdrift.domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.contractdrift.domain.rules.AddedRequiredParameterRule;
 import com.contractdrift.domain.rules.ParameterBecameRequiredRule;
 import com.contractdrift.domain.rules.RemovedEndpointRule;
 import com.contractdrift.domain.rules.RemovedParameterRule;
@@ -43,6 +44,7 @@ public class DiffEngine {
     private final RemovedEndpointRule removedEndpointRule = new RemovedEndpointRule();
     private final List<CompatibilityRule> endpointRules = List.of(
             new RemovedParameterRule(),
+            new AddedRequiredParameterRule(),
             new ParameterBecameRequiredRule(),
             new RemovedRequestPropertyRule(),
             new RequestPropertyBecameRequiredRule(),
