@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.contractdrift.domain.Change;
+import com.contractdrift.domain.Config;
 import com.contractdrift.domain.Contract;
 import com.contractdrift.domain.DiffEngine;
 import com.contractdrift.domain.ContractParser;
@@ -30,20 +31,32 @@ public class CompareContractsUseCase {
     }
 
     /**
-     * Compares two OpenAPI files and returns all detected changes.
+     * Compares two OpenAPI files using default config.
      *
      * @param oldContractPath path to the previous contract
      * @param newContractPath path to the new contract
      * @return list of changes found
      */
     public List<Change> execute(Path oldContractPath, Path newContractPath) {
-        Contract oldContract = parser.parse(oldContractPath);
-        Contract newContract = parser.parse(newContractPath);
-        return engine.diff(oldContract, newContract);
+        return execute(oldContractPath, newContractPath, Config.defaultConfig());
     }
 
     /**
-     * Compares two pre-parsed contracts and returns all detected changes.
+     * Compares two OpenAPI files using custom config.
+     *
+     * @param oldContractPath path to the previous contract
+     * @param newContractPath path to the new contract
+     * @param config          configuration for the diff engine
+     * @return list of changes found
+     */
+    public List<Change> execute(Path oldContractPath, Path newContractPath, Config config) {
+        Contract oldContract = parser.parse(oldContractPath);
+        Contract newContract = parser.parse(newContractPath);
+        return engine.diff(oldContract, newContract, config);
+    }
+
+    /**
+     * Compares two pre-parsed contracts using default config.
      *
      * @param oldContract previous contract
      * @param newContract new contract
@@ -51,5 +64,17 @@ public class CompareContractsUseCase {
      */
     public List<Change> execute(Contract oldContract, Contract newContract) {
         return engine.diff(oldContract, newContract);
+    }
+
+    /**
+     * Compares two pre-parsed contracts using custom config.
+     *
+     * @param oldContract previous contract
+     * @param newContract new contract
+     * @param config      configuration for the diff engine
+     * @return list of changes found
+     */
+    public List<Change> execute(Contract oldContract, Contract newContract, Config config) {
+        return engine.diff(oldContract, newContract, config);
     }
 }
