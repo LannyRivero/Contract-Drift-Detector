@@ -6,7 +6,10 @@ import java.util.List;
 import com.contractdrift.domain.rules.ParameterBecameRequiredRule;
 import com.contractdrift.domain.rules.RemovedEndpointRule;
 import com.contractdrift.domain.rules.RemovedParameterRule;
+import com.contractdrift.domain.rules.RemovedRequestPropertyRule;
 import com.contractdrift.domain.rules.RemovedResponseRule;
+import com.contractdrift.domain.rules.RequestPropertyBecameRequiredRule;
+import com.contractdrift.domain.rules.RequestPropertyTypeChangedRule;
 import com.contractdrift.domain.rules.ResponsePropertyRemovedRule;
 import com.contractdrift.domain.rules.ResponseTypeChangedRule;
 
@@ -41,6 +44,9 @@ public class DiffEngine {
     private final List<CompatibilityRule> endpointRules = List.of(
             new RemovedParameterRule(),
             new ParameterBecameRequiredRule(),
+            new RemovedRequestPropertyRule(),
+            new RequestPropertyBecameRequiredRule(),
+            new RequestPropertyTypeChangedRule(),
             new RemovedResponseRule(),
             new ResponsePropertyRemovedRule(),
             new ResponseTypeChangedRule());
