@@ -153,12 +153,61 @@ mvn clean package
 ## Usage
 
 ```bash
-java -jar target/contract-drift-detector-0.0.1-SNAPSHOT.jar old-api.yaml new-api.yaml
+java -jar target/contract-drift-detector-1.0.0.jar old-api.yaml new-api.yaml
 ```
 
 Exit code:
 - `0` — no breaking changes
 - `1` — breaking changes detected
+
+### JSON Output
+
+For CI/CD integration, use `--json`:
+
+```bash
+java -jar target/contract-drift-detector-1.0.0.jar old-api.yaml new-api.yaml --json
+```
+
+Output:
+
+```json
+{
+  "summary": {
+    "breaking": 2,
+    "safe": 0,
+    "total": 2
+  },
+  "hasBreakingChanges": true,
+  "changes": [
+    {
+      "type": "ENDPOINT_REMOVED",
+      "severity": "BREAKING",
+      "location": "GET /users/{id}",
+      "oldValue": "present",
+      "newValue": "missing",
+      "message": "Endpoint removed"
+    }
+  ]
+}
+```
+
+### CI/CD Example
+
+```yaml
+# .github/workflows/api-compat.yml
+- name: Check API compatibility
+  run: |
+    java -jar contract-drift-detector.jar \
+      baseline.yaml \
+      new-version.yaml \
+      --json > report.json
+    
+    if [ $? -ne 0 ]; then
+      echo "Breaking changes detected!"
+      cat report.json
+      exit 1
+    fi
+```
 
 ## Real-World Example
 
