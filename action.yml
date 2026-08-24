@@ -1,0 +1,23 @@
+name: "Contract Drift Detector"
+description: "Detect breaking API contract changes between OpenAPI specifications"
+author: "LannyRivero"
+
+inputs:
+  old-contract:
+    description: "Path to the old OpenAPI contract"
+    required: true
+  new-contract:
+    description: "Path to the new OpenAPI contract"
+    required: true
+  json-output:
+    description: "Output results as JSON"
+    required: false
+    default: "false"
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+
+branding:
+  icon: "alert-triangle"
+  color: "red"
