@@ -46,8 +46,7 @@ class ParameterRulesTest {
     void shouldDetectParameterRequirementChange(
             String name, String location,
             boolean oldRequired, boolean newRequired,
-            String expectedType
-    ) {
+            String expectedType) {
         ApiParameter oldParam = new ApiParameter(name, location, oldRequired, "string");
         ApiParameter newParam = new ApiParameter(name, location, newRequired, "string");
         Contract oldContract = contractWith(key, List.of(oldParam));
@@ -69,6 +68,27 @@ class ParameterRulesTest {
         }
     }
 
+    @Test
+    @DisplayName("should detect a new required parameter added to existing endpoint")
+    void shouldDetectNewRequiredParameter() {
+        ApiParameter oldParam = queryParam("limit", false);
+        ApiParameter newParam1 = queryParam("limit", false);
+        ApiParameter newParam2 = queryParam("token", true);
+        Contract oldContract = contractWith(key, List.of(oldParam));
+        Contract newContract = contractWith(key, List.of(newParam1, newParam2));
+
+        List<Change> changes = engine.diff(oldContract, newContract);
+
+        assertThat(changes)
+                .hasSize(1)
+                .first()
+                .satisfies(change -> {
+                    assertThat(change.type()).isEqualTo(ChangeType.PARAMETER_BECAME_REQUIRED);
+                    assertThat(change.severity()).isEqualTo(Severity.BREAKING);
+                    assertThat(change.message()).contains("token");
+                });
+    }
+
     // ── Helpers ──────────────────────────────────────────────
 
     private static EndpointKey endpointKey(String path, HttpMethod method) {
@@ -82,5 +102,9 @@ class ParameterRulesTest {
 
     private static ApiParameter pathParam(String name, boolean required) {
         return new ApiParameter(name, "path", required, "string");
+    }
+
+    private static ApiParameter queryParam(String name, boolean required) {
+        return new ApiParameter(name, "query", required, "string");
     }
 }
