@@ -33,7 +33,8 @@ public class AddedRequiredParameterRule implements CompatibilityRule {
         for (ApiParameter newParam : newEndpoint.parameters()) {
             if (newParam.required()) {
                 boolean existedInOld = oldEndpoint.parameters().stream()
-                        .anyMatch(p -> p.name().equals(newParam.name()));
+                        .anyMatch(p -> p.name().equals(newParam.name())
+                                && p.location().equals(newParam.location()));
 
                 if (!existedInOld) {
                     changes.add(new Change(
