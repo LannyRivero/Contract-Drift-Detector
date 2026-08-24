@@ -20,8 +20,8 @@ import java.util.Map;
  * @param responses   response schemas indexed by HTTP status code
  */
 public record Endpoint(
-                EndpointKey key,
-                List<ApiParameter> parameters,
-                ApiSchema requestBody,
-                Map<String, ApiSchema> responses) {
+        EndpointKey key,
+        List<ApiParameter> parameters,
+        ApiSchema requestBody,
+        Map<String, ApiSchema> responses) {
 }
