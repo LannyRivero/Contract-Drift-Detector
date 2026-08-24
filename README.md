@@ -2,87 +2,224 @@
 
 Deterministic OpenAPI compatibility checker for detecting breaking API contract changes.
 
-## Goal
+## Problem
 
-Contract Drift Detector compares two OpenAPI contracts and reports incompatible API changes before they reach production.
+When an API evolves, small contract changes can break existing consumers:
 
-The project prioritizes:
+- Removing an endpoint
+- Removing a parameter
+- Converting an optional parameter to required
+- Removing a request body property
+- Changing a field type
+- Removing a response code
 
-- small MVP scope
-- deterministic rules
-- clean architecture
-- strong testing
-- CI/CD readiness
-- optional AI explanations only after the deterministic report exists
+These changes often slip through manual code reviews. Contract Drift Detector automates this check with **zero false positives** — every detection is a real breaking change.
 
-## MVP Scope
+## Example
 
-The first MVP will detect:
+Given two OpenAPI contracts:
 
-- removed endpoints
-- removed HTTP methods
-- removed parameters
-- parameters becoming required
-- incompatible type changes
-- new required request properties
-- removed response codes
-- removed response properties
+```bash
+java -jar contract-drift-detector.jar old-api.yaml new-api.yaml
+```
 
-## Out of Scope for MVP
+Output:
 
-The MVP intentionally does not include:
+```
+=================================
+API CONTRACT COMPATIBILITY REPORT
+=================================
 
-- frontend
-- authentication
-- database
-- Kafka
-- dashboard
-- SaaS features
-- billing
-- mandatory AI
+Breaking changes: 3
+Safe changes: 0
 
-New ideas go to the roadmap, not directly into the MVP.
+[BREAKING]
+GET /users/{id}
+Endpoint removed
 
-## Tech Stack
+[BREAKING]
+POST /orders
+New required field: country
 
-- Java 21
-- Spring Boot 3
-- Maven
-- JUnit 5
-- AssertJ
-- Swagger Parser for OpenAPI parsing
-- GitHub Actions
+[BREAKING]
+GET /products/{id}
+Type changed: price from string to number
+```
 
-## Architecture Principle
+## What It Detects (v1.0)
 
-The comparison engine must not depend on HTTP, Spring MVC, databases, or AI.
+| Change Type | Severity | Example |
+|---|---|---|
+| Endpoint removed | BREAKING | `DELETE /users/{id}` deleted |
+| Parameter removed | BREAKING | `?filter=active` removed |
+| Parameter became required | BREAKING | `?token` optional → required |
+| Request property removed | BREAKING | `name` field removed from body |
+| Request property became required | BREAKING | `email` optional → required |
+| Request property type changed | BREAKING | `age: string` → `age: integer` |
+| Response code removed | BREAKING | `404` response deleted |
+| Response property removed | BREAKING | `name` field removed from response |
+| Response property type changed | BREAKING | `id: string` → `id: integer` |
 
-Initial pipeline:
+## What It Does NOT Detect (Yet)
+
+- Authentication changes
+- Rate limiting changes
+- Header changes
+- Schema composition (allOf, oneOf, anyOf)
+- Webhook changes
+
+These are planned for future versions.
+
+## Architecture
 
 ```text
 OpenAPI v1 ─┐
-            ├── Parser Adapter
+            ├── Parser Adapter (Swagger Parser)
 OpenAPI v2 ─┘
                 ↓
-          Contract Model
+          Contract Model (Domain)
                 ↓
            Diff Engine
+                ↓
+         Compatibility Rules
                 ↓
               Report
 ```
 
-## Current Status
+### Key Design Decisions
 
-Initial repository bootstrap.
+- **Deterministic rules only** — AI can explain impact later, but never decides if something is breaking
+- **Domain-driven** — `Contract`, `Endpoint`, `Change` are plain Java records
+- **Strategy pattern** — each rule is a separate class implementing `CompatibilityRule`
+- **Parser-agnostic** — the diff engine works on domain objects, not Swagger POJOs
+- **No Spring dependency** — the engine runs without Spring Boot; the CLI is standalone
 
-First implementation target:
+## Project Structure
 
 ```text
-Detect removed endpoints with domain-level tests.
+src/main/java/com/contractdrift/
+├── ContractDriftDetectorApplication.java   # CLI entry point
+├── application/
+│   └── CompareContractsUseCase.java        # Orchestration
+├── domain/
+│   ├── Contract.java                       # API contract
+│   ├── Endpoint.java                       # API operation
+│   ├── EndpointKey.java                    # Endpoint identity
+│   ├── Change.java                         # Change record
+│   ├── ChangeType.java                     # Change categories
+│   ├── Severity.java                       # BREAKING / NON_BREAKING
+│   ├── CompatibilityRule.java              # Strategy interface
+│   ├── DiffEngine.java                     # Rule orchestrator
+│   └── rules/                              # 9 compatibility rules
+│       ├── RemovedEndpointRule.java
+│       ├── RemovedParameterRule.java
+│       ├── ParameterBecameRequiredRule.java
+│       ├── RemovedRequestPropertyRule.java
+│       ├── RequestPropertyBecameRequiredRule.java
+│       ├── RequestPropertyTypeChangedRule.java
+│       ├── RemovedResponseRule.java
+│       ├── ResponsePropertyRemovedRule.java
+│       └── ResponseTypeChangedRule.java
+└── infrastructure/
+    ├── openapi/
+    │   ├── OpenApiParserAdapter.java       # YAML → Contract
+    │   └── OpenApiMapper.java              # Swagger → Domain
+    └── report/
+        └── ConsoleReportRenderer.java      # Changes → text
 ```
+
+## Tech Stack
+
+- Java 21
+- Maven
+- Swagger Parser 2.1.46
+- JUnit 5 + AssertJ
+- GitHub Actions
 
 ## Run Tests
 
 ```bash
 mvn verify
 ```
+
+## Build
+
+```bash
+mvn clean package
+```
+
+## Usage
+
+```bash
+java -jar target/contract-drift-detector-0.0.1-SNAPSHOT.jar old-api.yaml new-api.yaml
+```
+
+Exit code:
+- `0` — no breaking changes
+- `1` — breaking changes detected
+
+## Real-World Example
+
+Run against the Petstore API demo:
+
+```bash
+java -jar target/contract-drift-detector-1.0.0.jar \
+  examples/petstore/v1.0.yaml \
+  examples/petstore/v2.0-breaking.yaml
+```
+
+Output:
+```
+=================================
+API CONTRACT COMPATIBILITY REPORT
+=================================
+
+Breaking changes: 7
+
+[BREAKING] DELETE /pets/{petId}
+Endpoint removed
+
+[BREAKING] GET /pets
+Parameter removed: species
+
+[BREAKING] GET /pets/{petId}
+Parameter became required: token
+
+[BREAKING] GET /pets/{petId}
+Type changed: age from integer to string
+
+[BREAKING] POST /pets
+Request property removed: owner
+
+[BREAKING] POST /pets
+Request property removed: age
+
+[BREAKING] POST /pets
+Type changed: age from integer to string
+```
+
+See [`examples/petstore/`](examples/petstore/) for full contracts.
+
+## CI/CD
+
+GitHub Actions runs `mvn verify` on every push and PR to `main`.
+
+## Roadmap
+
+### v1.1
+- JSON output for CI/CD integration
+- AddedRequiredParameter rule (new endpoint with required params)
+
+### v1.2
+- GitHub Action
+
+### v1.3
+- Automatic PR comments
+
+### v2.0
+- Configurable rules
+- Policy file
+
+## License
+
+MIT

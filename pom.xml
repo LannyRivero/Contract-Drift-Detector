@@ -13,7 +13,7 @@
 
     <groupId>com.contractdrift</groupId>
     <artifactId>contract-drift-detector</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>Contract Drift Detector</name>
     <description>Deterministic OpenAPI compatibility checker</description>
 
