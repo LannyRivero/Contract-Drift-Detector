@@ -127,7 +127,8 @@ src/main/java/com/contractdrift/
     │   ├── OpenApiParserAdapter.java       # YAML → Contract
     │   └── OpenApiMapper.java              # Swagger → Domain
     └── report/
-        └── ConsoleReportRenderer.java      # Changes → text
+        ├── ConsoleReportRenderer.java      # Changes → text
+        └── JsonReportRenderer.java         # Changes → JSON
 ```
 
 ## Tech Stack
@@ -207,6 +208,50 @@ Output:
       cat report.json
       exit 1
     fi
+```
+
+## GitHub Action
+
+Use in your workflow:
+
+```yaml
+- name: Check API compatibility
+  uses: LannyRivero/Contract-Drift-Detector@v1.1.0
+  with:
+    old-contract: 'api/baseline.yaml'
+    new-contract: 'api/current.yaml'
+    json-output: 'true'
+```
+
+### Inputs
+
+| Input | Description | Required | Default |
+|---|---|---|---|
+| `old-contract` | Path to old OpenAPI spec | Yes | - |
+| `new-contract` | Path to new OpenAPI spec | Yes | - |
+| `json-output` | Output as JSON | No | `false` |
+
+### Example with version check
+
+```yaml
+name: API Compatibility
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+
+jobs:
+  check-compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check API compatibility
+        uses: LannyRivero/Contract-Drift-Detector@v1.1.0
+        with:
+          old-contract: 'api/main.yaml'
+          new-contract: 'api/pr.yaml'
+          json-output: 'true'
 ```
 
 ## Real-World Example
