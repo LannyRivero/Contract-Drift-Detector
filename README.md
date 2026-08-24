@@ -46,12 +46,13 @@ GET /products/{id}
 Type changed: price from string to number
 ```
 
-## What It Detects (v1.0)
+## What It Detects (v1.1)
 
 | Change Type | Severity | Example |
 |---|---|---|
 | Endpoint removed | BREAKING | `DELETE /users/{id}` deleted |
 | Parameter removed | BREAKING | `?filter=active` removed |
+| New required parameter | BREAKING | `?token` added as required |
 | Parameter became required | BREAKING | `?token` optional → required |
 | Request property removed | BREAKING | `name` field removed from body |
 | Request property became required | BREAKING | `email` optional → required |
@@ -110,7 +111,8 @@ src/main/java/com/contractdrift/
 │   ├── Severity.java                       # BREAKING / NON_BREAKING
 │   ├── CompatibilityRule.java              # Strategy interface
 │   ├── DiffEngine.java                     # Rule orchestrator
-│   └── rules/                              # 9 compatibility rules
+│   └── rules/                              # 10 compatibility rules
+│       ├── AddedRequiredParameterRule.java
 │       ├── RemovedEndpointRule.java
 │       ├── RemovedParameterRule.java
 │       ├── ParameterBecameRequiredRule.java
