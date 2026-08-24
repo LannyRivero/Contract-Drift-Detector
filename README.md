@@ -158,6 +158,48 @@ Exit code:
 - `0` — no breaking changes
 - `1` — breaking changes detected
 
+## Real-World Example
+
+Run against the Petstore API demo:
+
+```bash
+java -jar target/contract-drift-detector-1.0.0.jar \
+  examples/petstore/v1.0.yaml \
+  examples/petstore/v2.0-breaking.yaml
+```
+
+Output:
+```
+=================================
+API CONTRACT COMPATIBILITY REPORT
+=================================
+
+Breaking changes: 7
+
+[BREAKING] DELETE /pets/{petId}
+Endpoint removed
+
+[BREAKING] GET /pets
+Parameter removed: species
+
+[BREAKING] GET /pets/{petId}
+Parameter became required: token
+
+[BREAKING] GET /pets/{petId}
+Type changed: age from integer to string
+
+[BREAKING] POST /pets
+Request property removed: owner
+
+[BREAKING] POST /pets
+Request property removed: age
+
+[BREAKING] POST /pets
+Type changed: age from integer to string
+```
+
+See [`examples/petstore/`](examples/petstore/) for full contracts.
+
 ## CI/CD
 
 GitHub Actions runs `mvn verify` on every push and PR to `main`.
