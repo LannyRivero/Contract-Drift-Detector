@@ -2,87 +2,177 @@
 
 Deterministic OpenAPI compatibility checker for detecting breaking API contract changes.
 
-## Goal
+## Problem
 
-Contract Drift Detector compares two OpenAPI contracts and reports incompatible API changes before they reach production.
+When an API evolves, small contract changes can break existing consumers:
 
-The project prioritizes:
+- Removing an endpoint
+- Removing a parameter
+- Converting an optional parameter to required
+- Changing a field type
+- Adding a new required request property
+- Removing a response code
 
-- small MVP scope
-- deterministic rules
-- clean architecture
-- strong testing
-- CI/CD readiness
-- optional AI explanations only after the deterministic report exists
+These changes often slip through manual code reviews. Contract Drift Detector automates this check.
 
-## MVP Scope
+## Example
 
-The first MVP will detect:
+Given two OpenAPI contracts:
 
-- removed endpoints
-- removed HTTP methods
-- removed parameters
-- parameters becoming required
-- incompatible type changes
-- new required request properties
-- removed response codes
-- removed response properties
+```bash
+java -jar contract-drift-detector.jar old-api.yaml new-api.yaml
+```
 
-## Out of Scope for MVP
+Output:
 
-The MVP intentionally does not include:
+```
+=================================
+API CONTRACT COMPATIBILITY REPORT
+=================================
 
-- frontend
-- authentication
-- database
-- Kafka
-- dashboard
-- SaaS features
-- billing
-- mandatory AI
+Breaking changes: 3
+Safe changes: 0
 
-New ideas go to the roadmap, not directly into the MVP.
+[BREAKING]
+GET /users/{id}
+Endpoint removed
+
+[BREAKING]
+POST /users [200]
+Type changed: email from string to integer
+
+[BREAKING]
+POST /users
+New required field: country
+```
+
+## What It Detects
+
+| Change Type | Severity |
+|---|---|
+| Endpoint removed | BREAKING |
+| HTTP method removed | BREAKING |
+| Parameter removed | BREAKING |
+| Parameter became required | BREAKING |
+| Required property added | BREAKING |
+| Property type changed | BREAKING |
+| Response code removed | BREAKING |
+| Response property removed | BREAKING |
+| Response property type changed | BREAKING |
+
+## What It Does NOT Detect (Yet)
+
+- Authentication changes
+- Rate limiting changes
+- Header changes
+- All OpenAPI edge cases
+- Webhook changes
+- Schema composition (allOf, oneOf, anyOf)
+
+These are planned for future versions.
+
+## Architecture
+
+```text
+OpenAPI v1 ─┐
+            ├── Parser Adapter (Swagger Parser)
+OpenAPI v2 ─┘
+                ↓
+          Contract Model (Domain)
+                ↓
+           Diff Engine
+                ↓
+          Compatibility Rules
+                ↓
+             Report
+```
+
+### Key Design Decisions
+
+- **Deterministic rules only** — AI can explain impact later, but never decides if something is breaking
+- **Domain-driven** — `Contract`, `Endpoint`, `Change` are plain Java records
+- **Parser-agnostic** — the diff engine works on domain objects, not Swagger POJOs
+- **No Spring dependency** — the engine runs without Spring Boot; the CLI is standalone
+
+## Project Structure
+
+```text
+src/main/java/com/contractdrift/
+├── ContractDriftDetectorApplication.java   # CLI entry point
+├── application/
+│   └── CompareContractsUseCase.java        # Orchestration
+├── domain/
+│   ├── Change.java                         # Change record
+│   ├── ChangeType.java                     # Change categories
+│   ├── Contract.java                       # API contract
+│   ├── ContractDiffer.java                 # Diff engine
+│   ├── Endpoint.java                       # API operation
+│   ├── EndpointKey.java                    # Endpoint identity
+│   └── Severity.java                       # BREAKING / NON_BREAKING
+└── infrastructure/
+    ├── openapi/
+    │   └── OpenApiParserAdapter.java       # YAML → Contract
+    └── report/
+        └── ConsoleReportRenderer.java      # Changes → text
+```
 
 ## Tech Stack
 
 - Java 21
-- Spring Boot 3
 - Maven
+- Swagger Parser 2.1.46
 - JUnit 5
 - AssertJ
-- Swagger Parser for OpenAPI parsing
 - GitHub Actions
-
-## Architecture Principle
-
-The comparison engine must not depend on HTTP, Spring MVC, databases, or AI.
-
-Initial pipeline:
-
-```text
-OpenAPI v1 ─┐
-            ├── Parser Adapter
-OpenAPI v2 ─┘
-                ↓
-          Contract Model
-                ↓
-           Diff Engine
-                ↓
-              Report
-```
-
-## Current Status
-
-Initial repository bootstrap.
-
-First implementation target:
-
-```text
-Detect removed endpoints with domain-level tests.
-```
 
 ## Run Tests
 
 ```bash
 mvn verify
 ```
+
+## Build
+
+```bash
+mvn clean package
+```
+
+## Usage
+
+```bash
+java -jar target/contract-drift-detector-0.0.1-SNAPSHOT.jar old-api.yaml new-api.yaml
+```
+
+Exit code:
+- `0` — no breaking changes
+- `1` — breaking changes detected
+
+## CI/CD
+
+GitHub Actions runs `mvn verify` on every push and PR to `main`.
+
+## Roadmap
+
+### v1.1
+- JSON output
+- Markdown output
+- Compatibility score
+
+### v1.2
+- GitHub Action
+
+### v1.3
+- Automatic PR comments
+
+### v1.4
+- Optional AI explanations (Spring AI)
+
+### v2.0
+- Configurable rules
+- Ignore rules
+- Policy file
+- Multiple compatibility profiles
+
+## License
+
+MIT

@@ -1,0 +1,30 @@
+openapi: '3.0.0'
+info:
+  title: User Management API
+  version: '2.0.0'
+
+paths:
+  /users/{id}:
+    get:
+      summary: Get user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  email:
+                    type: integer
+                  name:
+                    type: string
+                required: [id, email, name]
