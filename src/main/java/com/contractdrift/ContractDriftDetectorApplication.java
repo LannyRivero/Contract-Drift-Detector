@@ -38,7 +38,11 @@ public class ContractDriftDetectorApplication {
         for (int i = 0; i < args.length; i++) {
             if ("--json".equals(args[i])) {
                 jsonOutput = true;
-            } else if ("--config".equals(args[i]) && i + 1 < args.length) {
+            } else if ("--config".equals(args[i])) {
+                if (i + 1 >= args.length) {
+                    System.err.println("Error: --config requires a path argument");
+                    System.exit(1);
+                }
                 configPath = args[++i];
             } else if (oldContractPath == null) {
                 oldContractPath = args[i];

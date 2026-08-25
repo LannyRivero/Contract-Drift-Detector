@@ -58,6 +58,7 @@ public class ConfigLoader {
 
             if (inIgnoredRules && trimmed.startsWith("- ")) {
                 String rule = trimmed.substring(2).trim();
+                rule = cleanYamlScalar(rule);
                 if (!rule.isEmpty()) {
                     ignoredRules.add(rule);
                 }
@@ -75,5 +76,23 @@ public class ConfigLoader {
         }
 
         return new Config(ignoredRules, failOnWarning);
+    }
+
+    private String cleanYamlScalar(String value) {
+        // Remove inline comments
+        int commentIndex = value.indexOf('#');
+        if (commentIndex > 0) {
+            value = value.substring(0, commentIndex);
+        }
+
+        // Remove surrounding quotes
+        if (value.length() >= 2) {
+            if ((value.startsWith("\"") && value.endsWith("\""))
+                    || (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.substring(1, value.length() - 1);
+            }
+        }
+
+        return value.trim();
     }
 }
