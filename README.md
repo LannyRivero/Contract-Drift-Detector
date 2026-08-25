@@ -231,6 +231,43 @@ Use in your workflow:
 | `new-contract` | Path to new OpenAPI spec | Yes | - |
 | `json-output` | Output as JSON | No | `false` |
 
+## Configuration
+
+Customize which rules are enabled with a config file:
+
+```yaml
+# contract-drift.yaml
+ignoredRules:
+  - PARAMETER_REMOVED
+  - RESPONSE_PROPERTY_REMOVED
+failOnWarning: false
+```
+
+### Usage
+
+```bash
+java -jar contract-drift-detector.jar old.yaml new.yaml --config contract-drift.yaml
+```
+
+### Config Options
+
+| Option | Description | Default |
+|---|---|---|
+| `ignoredRules` | List of rule types to ignore | `[]` |
+| `failOnWarning` | Exit with code 1 for warnings | `false` |
+
+### Available Rule Types
+
+- `ENDPOINT_REMOVED`
+- `PARAMETER_REMOVED`
+- `PARAMETER_BECAME_REQUIRED`
+- `REQUEST_PROPERTY_REMOVED`
+- `REQUEST_PROPERTY_BECAME_REQUIRED`
+- `REQUEST_PROPERTY_TYPE_CHANGED`
+- `RESPONSE_REMOVED`
+- `RESPONSE_PROPERTY_REMOVED`
+- `RESPONSE_PROPERTY_TYPE_CHANGED`
+
 ### Example with version check
 
 ```yaml

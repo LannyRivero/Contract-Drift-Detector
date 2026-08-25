@@ -54,16 +54,29 @@ public class DiffEngine {
             new ResponseTypeChangedRule());
 
     /**
-     * Compares two contracts and returns all detected changes.
+     * Compares two contracts using default config.
      *
      * @param oldContract the previous version of the API contract
      * @param newContract the new version of the API contract
      * @return list of changes found (empty if contracts are identical)
      */
     public List<Change> diff(Contract oldContract, Contract newContract) {
+        return diff(oldContract, newContract, Config.defaultConfig());
+    }
+
+    /**
+     * Compares two contracts using custom config.
+     *
+     * @param oldContract the previous version of the API contract
+     * @param newContract the new version of the API contract
+     * @param config      configuration for the diff engine
+     * @return list of changes found (empty if contracts are identical)
+     */
+    public List<Change> diff(Contract oldContract, Contract newContract, Config config) {
         List<Change> changes = new ArrayList<>();
 
-        changes.addAll(removedEndpointRule.apply(oldContract, newContract));
+        List<Change> endpointRemovals = removedEndpointRule.apply(oldContract, newContract);
+        changes.addAll(filterByConfig(endpointRemovals, config));
 
         for (EndpointKey key : oldContract.endpoints().keySet()) {
             if (newContract.endpoints().containsKey(key)) {
@@ -72,11 +85,21 @@ public class DiffEngine {
                 String location = key.displayName();
 
                 for (CompatibilityRule rule : endpointRules) {
-                    changes.addAll(rule.apply(oldEndpoint, newEndpoint, location));
+                    List<Change> ruleChanges = rule.apply(oldEndpoint, newEndpoint, location);
+                    changes.addAll(filterByConfig(ruleChanges, config));
                 }
             }
         }
 
         return changes;
+    }
+
+    private List<Change> filterByConfig(List<Change> changes, Config config) {
+        if (config.ignoredRules().isEmpty()) {
+            return changes;
+        }
+        return changes.stream()
+                .filter(change -> config.isRuleEnabled(change.type().name()))
+                .toList();
     }
 }
