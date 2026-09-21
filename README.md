@@ -1,5 +1,10 @@
 # Contract Drift Detector
 
+[![CI](https://github.com/LannyRivero/Contract-Drift-Detector/actions/workflows/ci.yml/badge.svg)](https://github.com/LannyRivero/Contract-Drift-Detector/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/LannyRivero/Contract-Drift-Detector)](https://github.com/LannyRivero/Contract-Drift-Detector/releases/latest)
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
+[![License](https://img.shields.io/github/license/LannyRivero/Contract-Drift-Detector)](LICENSE)
+
 Detect breaking changes between two OpenAPI contracts before they reach production.
 
 Contract Drift Detector is a deterministic Java CLI and GitHub Action for API compatibility checks. It compares an old OpenAPI specification against a new one, reports supported breaking changes, and exits with a non-zero status when the new contract is not backward compatible.
