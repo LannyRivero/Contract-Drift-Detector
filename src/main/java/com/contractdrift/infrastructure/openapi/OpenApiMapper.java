@@ -144,7 +144,7 @@ class OpenApiMapper {
     private Map<String, ApiProperty> mapProperties(Schema<?> schema) {
         Map<String, ApiProperty> properties = new HashMap<>();
 
-        Map<String, ? extends Schema<?>> schemaProps = (Map<String, ? extends Schema<?>>) schema.getProperties();
+        Map<String, Schema<?>> schemaProps = (Map<String, Schema<?>>) (Map<?, ?>) schema.getProperties();
         if (schemaProps == null) {
             return properties;
         }
@@ -152,7 +152,7 @@ class OpenApiMapper {
         List<String> requiredList = schema.getRequired();
         Set<String> required = requiredList != null ? new HashSet<>(requiredList) : Set.of();
 
-        for (Map.Entry<String, ? extends Schema<?>> entry : schemaProps.entrySet()) {
+        for (Map.Entry<String, Schema<?>> entry : schemaProps.entrySet()) {
             Schema<?> propSchema = entry.getValue();
             String propName = entry.getKey();
             String propType = propSchema.getType() != null ? propSchema.getType() : "unknown";
