@@ -47,7 +47,7 @@ mvn clean package
 Run the included Petstore example:
 
 ```bash
-java -jar target/contract-drift-detector-1.0.0.jar \
+java -jar target/contract-drift-detector-1.3.0.jar \
   examples/petstore/v1.0.yaml \
   examples/petstore/v2.0-breaking.yaml
 ```
@@ -304,7 +304,7 @@ Design choices:
 - **Parser-agnostic domain**: the diff engine works with domain records, not Swagger parser objects.
 - **Small rule classes**: each compatibility check implements the same rule interface.
 - **CLI-first**: the tool can run locally, in CI, or inside the Docker-based GitHub Action.
-- **No Spring dependency**: the engine is standalone and can be used outside Spring Boot projects.
+- **No Spring Web/API layer**: the comparison engine is standalone and can be used outside Spring Boot projects.
 
 ### Why there is no Spring Boot API yet
 
